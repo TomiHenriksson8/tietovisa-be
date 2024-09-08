@@ -41,6 +41,7 @@ export const loginUser = (
   password: string
 ): Promise<{ token: string; email: string; password: string }> => {
   return new Promise((resolve, reject) => {
+    console.log(`Attempting login with email: ${email}, password: ${password}`);
     request(app)
       .post("/api/v1/auth/login")
       .send({
@@ -50,10 +51,12 @@ export const loginUser = (
       .expect(200)
       .end((err, res) => {
         if (err) {
+          console.log("Error in login:", err);
           return reject(err);
         } else {
           expect(res.statusCode).toEqual(200);
           expect(res.body).toHaveProperty("token");
+          console.log("Token received:", res.body.token);
           resolve({
             token: res.body.token,
             email,

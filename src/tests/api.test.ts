@@ -1,12 +1,14 @@
 import mongoose from "mongoose";
 import { testInvalidRoute, testServer } from "./testServer";
 import app from "../app";
-import crypto from "crypto";
 import { loginUser, registerUser } from "./testAuth";
 import { getQuizzesTest } from "./testQuiz";
 import { createQuestionTest } from "./testQuestion";
 
+
 let token: string;
+const ADMIN_EMAIL = "testi@testi.com";
+const ADMIN_PASSWORD = "12345";
 
 describe("GET /api/v1", () => {
   beforeAll(async () => {
@@ -14,6 +16,9 @@ describe("GET /api/v1", () => {
       throw new Error("TEST_URL is not defined");
     }
     await mongoose.connect(process.env.MONGO_TEST_URI);
+
+    const adminUser = await loginUser(app, ADMIN_EMAIL, ADMIN_PASSWORD);
+    token = adminUser.token;
   });
 
   afterAll(async () => {
@@ -28,26 +33,20 @@ describe("GET /api/v1", () => {
     await testInvalidRoute(app, "/api/v1/invalid");
   });
 
-  // test auth routes
+  // Test auth routes
   it("should register a new user and login successfully", async () => {
     const registeredUser = await registerUser(app);
-    let email = registeredUser.email;
-    let password = registeredUser.password;
-    const loggedInUser = await loginUser(app, email, password);
-    token = loggedInUser.token;
+    const loggedInUser = await loginUser(app, registeredUser.email, registeredUser.password);
+    expect(loggedInUser).toHaveProperty("token");
   });
 
-  // quiz routes
+  // Quiz routes
   it("should get all quizzes", async () => {
     await getQuizzesTest(app);
   });
+
+  // question routes
+  it("should create a question", async () => {
+    await createQuestionTest(app, token);
+  });
 });
-
-
-// test question routes
-it("should create a question", async () => {
-  const EMAIL = 'testi@admin'
-  const PASSWORD = '12345'
-  const adminUser = await loginUser(app, EMAIL, PASSWORD )
-  await createQuestionTest(app, adminUser.token)
-})

@@ -35,6 +35,7 @@ export const loginUser = async (
   next: NextFunction
 ) => {
   const { email, password } = req.body;
+  console.log(email, password)
   try {
     const user = await UserModel.findOne({ email });
     if (!user) {
@@ -47,6 +48,7 @@ export const loginUser = async (
     const token = generateToken(user._id.toString(), user.role);
     res.status(200).json({ user, token });
   } catch (error) {
+    console.error("Error during login:", error);
     next(new CustomError((error as Error).message, 500));
   }
 };

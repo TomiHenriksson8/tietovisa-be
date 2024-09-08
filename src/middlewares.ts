@@ -45,6 +45,7 @@ export const protect = async (
         process.env.JWT_SECRET as string
       ) as JwtPayload;
       (req as any).user = { id: decoded.id, role: decoded.role };
+      console.log('user decoded from token',decoded)
       next();
     } catch (err) {
       return next(new CustomError("Not authorized, token failed", 401));
