@@ -1,7 +1,6 @@
 import { Express } from "express";
 import request from "supertest";
 import crypto from "crypto";
-import { User } from "../types/userTypes";
 
 export const registerUser = (
   app: Express

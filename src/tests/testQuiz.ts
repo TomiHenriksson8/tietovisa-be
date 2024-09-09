@@ -1,5 +1,7 @@
-import request from 'supertest';
-import { Express } from 'express';
+import request from "supertest";
+import { Express } from "express";
+import crypto from "crypto";
+import { Quiz } from "../types/quizTypes";
 
 export const getQuizzesTest = (app: Express): Promise<any> => {
   return new Promise((resolve, reject) => {
@@ -44,14 +46,57 @@ export const getQuizzesTest = (app: Express): Promise<any> => {
       });
   });
 };
-/*
-export const createQuizTest = (app: Express):Promise<Any> => {
+
+export const createQuizTest = (
+  app: Express,
+  token: string,
+  questionIds: string[]
+): Promise<Quiz> => {
+  return new Promise((resolve, reject) => {
+    const randomString = () => crypto.randomBytes(8).toString("hex");
+    const title = randomString();
+
+    request(app)
+      .post("/api/v1/quiz")
+      .set("Authorization", `Bearer ${token}`)
+      .send({
+        title,
+        questionIds,
+      })
+      .expect(201)
+      .end((err, res) => {
+        if (err) {
+          return reject(err);
+        }
+        try {
+          expect(res.statusCode).toEqual(201);
+          expect(Array.isArray(res.body.questions)).toBe(true);
+          expect(res.body.questions.length).toEqual(questionIds.length);
+          resolve(res.body as Quiz);
+        } catch (assertionError) {
+          reject(assertionError);
+        }
+      });
+  });
+};
+
+export const deleteQuizTest = (app: Express, id: string, token: string) => {
   return new Promise((resolve, reject) => {
     request(app)
-      .post('/api/v1/quiz')
-      .send({
-
-      })
-  };
+      .delete(`/api/v1/quiz/${id}`)
+      .set("Authorization", `Bearer ${token}`)
+      .expect(200)
+      .end((err, res) => {
+        if (err) {
+          return reject(err);
+        }
+        try {
+          expect(res.statusCode).toEqual(200);
+          expect(res.body).toHaveProperty("message", "Quiz deleted successfully");
+          resolve(res.body);
+        } catch (assertionError) {
+          reject(assertionError);
+        }
+      });
+  });
 };
-*/

@@ -2,6 +2,7 @@ import mongoose, { Types, Document } from 'mongoose';
 import { Question } from './questionTypes';
 
 export interface Quiz extends Document {
+  _id: string;
   title: string;
   questions: Types.ObjectId[];
   publishedAt: Date;

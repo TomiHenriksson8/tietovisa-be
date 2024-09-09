@@ -112,7 +112,7 @@ export const deleteQuiz = async (
     if (!quiz) {
       return next(new CustomError("Quiz not found", 404));
     }
-    res.status(200).json({ message: "Quiz deleted sucessfully" });
+    res.status(200).json({ message: "Quiz deleted successfully" });
   } catch (error) {
     next(new CustomError((error as Error).message, 500));
   }
