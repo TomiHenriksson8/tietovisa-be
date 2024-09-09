@@ -1,0 +1,41 @@
+name: Node.js CI
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "20"
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Set up environment
+        run: |
+          echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> $GITHUB_ENV
+          echo "MONGO_TEST_URI=${{ secrets.MONGO_TEST_URI }}" >> $GITHUB_ENV
+          echo "PORT=${{ secrets.PORT }}" >> $GITHUB_ENV
+          echo "TEST_DB_ADMIN_EMAIL=${{ secrets.TEST_DB_ADMIN_EMAIL }}" >> $GITHUB_ENV
+          echo "TEST_DB_ADMIN_PASSWORD=${{ secrets.TEST_DB_ADMIN_PASSWORD }}" >> $GITHUB_ENV
+
+      # Run tests
+      - name: Run tests
+        run: npm run test
+
+      # Build the app (optional)
+      - name: Build the app
+        run: npm run build
