@@ -1,9 +1,9 @@
-
 import { NextFunction, Request, Response } from "express";
 import CustomError from "./classes/CustomError";
 import { ErrorResponse } from "./types/Messages";
 import jwt from "jsonwebtoken";
-
+import path from "path";
+import multer from "multer";
 
 export const notFound = (req: Request, res: Response, next: NextFunction) => {
   const error = new CustomError(`🔍 - Not Found - ${req.originalUrl}`, 404);
@@ -28,6 +28,7 @@ export interface JwtPayload {
   role: string;
 }
 
+
 export const protect = async (
   req: Request,
   res: Response,
@@ -45,7 +46,7 @@ export const protect = async (
         process.env.JWT_SECRET as string
       ) as JwtPayload;
       (req as any).user = { id: decoded.id, role: decoded.role };
-      console.log('user decoded from token',decoded)
+      console.log("user decoded from token", decoded);
       next();
     } catch (err) {
       return next(new CustomError("Not authorized, token failed", 401));
@@ -73,3 +74,25 @@ export const restrictTo = (...roles: string[]) => {
     next();
   };
 };
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, 'uploads/');
+  },
+  filename: (req, file, cb) => {
+    cb(null, `${Date.now()}_${file.originalname}`);
+  }
+});
+
+export const upload = multer({
+  storage,
+  fileFilter: (req, file, cb) => {
+    const ext = path.extname(file.originalname);
+
+    if (ext !== '.csv') {
+      (cb as any)(new Error('Only CSV files are allowed'), false);
+    } else {
+      cb(null, true);
+    }
+  }
+});

@@ -32,10 +32,10 @@ jobs:
           echo "TEST_DB_ADMIN_EMAIL=${{ secrets.TEST_DB_ADMIN_EMAIL }}" >> $GITHUB_ENV
           echo "TEST_DB_ADMIN_PASSWORD=${{ secrets.TEST_DB_ADMIN_PASSWORD }}" >> $GITHUB_ENV
 
-      # Run tests
+      
       - name: Run tests
         run: npm run test
 
-      # Build the app (optional)
+
       - name: Build the app
         run: npm run build
