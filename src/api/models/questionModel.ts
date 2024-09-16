@@ -9,7 +9,11 @@ const questionSchema = new Schema<Question>({
       isCorrect: { type: Boolean, required: true },
     },
   ],
-  difficulty: { type: String, default: "medium" },
+  difficulty: { type: Number, default: 5 },
+  date: {
+    type: Date,
+    required: true,
+  },
 });
 
 const QuestionModel = model<Question>("Question", questionSchema);
