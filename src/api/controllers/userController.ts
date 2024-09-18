@@ -5,21 +5,24 @@ import { generateToken } from "../../utils/tokenUtils";
 import { User } from "../../types/userTypes";
 
 export const registerUser = async (
-  req: Request<{}, {}, { username: string; email: string; password: string; role?: string }>,
+  req: Request<
+    {},
+    {},
+    { username: string; email: string; password: string; role?: string }
+  >,
   res: Response,
   next: NextFunction
 ) => {
-  const { username, email, password, role = 'user' } = req.body;
+  const { username, email, password, role = "user" } = req.body;
 
   try {
     const existingUser = await UserModel.findOne({ email });
     if (existingUser) {
-      return next(new CustomError('Email already in use', 400));
+      return next(new CustomError("Email already in use", 400));
     }
 
     const user = new UserModel({ username, email, password, role });
     await user.save();
-
 
     const token = generateToken(user._id.toString(), user.role);
 
@@ -35,7 +38,7 @@ export const loginUser = async (
   next: NextFunction
 ) => {
   const { email, password } = req.body;
-  console.log(email, password)
+  console.log(email, password);
   try {
     const user = await UserModel.findOne({ email });
     if (!user) {
@@ -50,5 +53,20 @@ export const loginUser = async (
   } catch (error) {
     console.error("Error during login:", error);
     next(new CustomError((error as Error).message, 500));
+  }
+};
+
+export const getUserByToken = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user.id;
+    const user = await UserModel.findById(userId).select("-password");
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.status(200).json({ user });
+  } catch (error) {
+    res.status(500).json({ message: "Failed to fetch user" });
   }
 };
