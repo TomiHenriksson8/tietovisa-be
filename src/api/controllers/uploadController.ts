@@ -99,7 +99,7 @@ export const uploadCsv = async (
         const quiz: Quiz = await QuizModel.create({
           title: `Quiz for ${new Date(dateKey).toLocaleDateString()}`,
           questions: questionIds,
-          publishedAt: new Date(),
+          publishedAt: new Date(dateKey),
         });
 
         createdQuizzes.push(quiz);

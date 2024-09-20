@@ -1,9 +1,10 @@
 import { NextFunction, Request, Response } from "express";
-import QuestionModel from "../models/questionModel";
+import QuestionModel, { QuestionDocument } from "../models/questionModel";
 import CustomError from "../../classes/CustomError";
 import QuizModel from "../models/quizModel";
 
 import { PopulatedQuiz, Quiz } from "../../types/quizTypes";
+import { FilterQuery } from "mongoose";
 
 export const createQuiz = async (
   req: Request<{}, {}, { title: string; questionIds: string[] }>,
@@ -126,5 +127,47 @@ export const deleteQuiz = async (
     res.status(200).json({ message: "Quiz deleted successfully" });
   } catch (error) {
     next(new CustomError((error as Error).message, 500));
+  }
+};
+
+export const searchQuestions = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    let searchTerm = '';
+    if (typeof req.query.q === 'string') {
+      searchTerm = req.query.q;
+    } else if (Array.isArray(req.query.q) && typeof req.query.q[0] === 'string') {
+      searchTerm = req.query.q[0];
+    }
+    let page = 1;
+    if (typeof req.query.page === 'string') {
+      const parsedPage = parseInt(req.query.page, 10);
+      if (!isNaN(parsedPage) && parsedPage > 0) {
+        page = parsedPage;
+      }
+    }
+    let limit = 50;
+    if (typeof req.query.limit === 'string') {
+      const parsedLimit = parseInt(req.query.limit, 10);
+      if (!isNaN(parsedLimit) && parsedLimit > 0) {
+        limit = parsedLimit;
+      }
+    }
+    const filter: FilterQuery<QuestionDocument> = searchTerm
+      ? { $text: { $search: searchTerm } }
+      : {};
+    const totalQuestions = await QuestionModel.countDocuments(filter);
+    const totalPages = Math.ceil(totalQuestions / limit);
+    const questions = await QuestionModel.find(filter)
+      .skip((page - 1) * limit)
+      .limit(limit)
+      .sort({ dateAdded: -1 });
+    res.json({
+      totalQuestions,
+      totalPages,
+      currentPage: page,
+      questions,
+    });
+  } catch (error) {
+    next(error);
   }
 };
