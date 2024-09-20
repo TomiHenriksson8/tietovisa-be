@@ -65,17 +65,28 @@ export const getQuizByDate = async (
   const { date } = req.query;
   try {
     const quizDate = new Date(date);
-    const quiz = QuizModel.findOne({ publishedAt: quizDate }).populate(
-      "questions"
-    ) as unknown as PopulatedQuiz;
+    const startOfDay = new Date(quizDate.setUTCHours(0, 0, 0, 0));
+    const endOfDay = new Date(quizDate.setUTCHours(23, 59, 59, 999));
+
+    const quiz = await QuizModel.findOne({
+      publishedAt: {
+        $gte: startOfDay,
+        $lte: endOfDay,
+      },
+    })
+      .populate('questions')
+      .lean() as unknown as PopulatedQuiz;
+
     if (!quiz) {
-      return next(new CustomError("Quiz not found the given date", 404));
+      return next(new CustomError("Quiz not found for the given date", 404));
     }
+
     res.status(200).json(quiz);
   } catch (error) {
     next(new CustomError((error as Error).message, 500));
   }
 };
+
 
 export const updateQuiz = async (
   req: Request<{ id: string }, {}, { title: string; questionIds: string[] }>,

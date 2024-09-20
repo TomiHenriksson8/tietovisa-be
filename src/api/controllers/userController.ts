@@ -70,3 +70,34 @@ export const getUserByToken = async (req: Request, res: Response) => {
     res.status(500).json({ message: "Failed to fetch user" });
   }
 };
+
+export const updateUser = async (
+  req: Request<{ userId: string }, {}, { email?: string; password?: string }>,
+  res: Response,
+  next: NextFunction
+) => {
+  const { userId } = req.params;
+  const { email, password } = req.body;
+
+  try {
+    const user = await UserModel.findById(userId);
+    if (!user) {
+      return next(new CustomError("User not found", 404));
+    }
+    if (email) {
+      const existingUser = await UserModel.findOne({ email });
+      if (existingUser && existingUser._id.toString() !== userId) {
+        return next(new CustomError("Email already in use", 400));
+      }
+      user.email = email;
+    }
+    if (password) {
+      user.password = password;
+    }
+    await user.save();
+
+    res.status(200).json({ message: "User updated successfully" });
+  } catch (error) {
+    next(new CustomError((error as Error).message, 500));
+  }
+};

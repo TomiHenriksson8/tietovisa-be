@@ -5,14 +5,17 @@ import {
   getQuizById,
   updateQuiz,
   deleteQuiz,
+  getQuizByDate,
 } from '../controllers/quizController';
 import { protect, restrictTo } from '../../middlewares';
 
 const router = Router();
 
-// Public routes
+// public routes
+router.get('/date', getQuizByDate);
 router.get('/', getQuizzes);
 router.get('/:id', getQuizById);
+
 
 // Admin-only routes
 router.post(
