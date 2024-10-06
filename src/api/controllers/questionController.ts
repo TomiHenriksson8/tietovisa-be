@@ -7,16 +7,17 @@ export const createQuestion = async (
   req: Request<
     {},
     {},
-    { questionText: string; answers: { text: string; isCorrect: boolean }[] }
+    { questionText: string; date: string; answers: { text: string; isCorrect: boolean }[] }
   >,
   res: Response<Question | { message: string }>,
   next: NextFunction
 ) => {
-  const { questionText, answers } = req.body;
+  const { questionText, answers, date } = req.body;
   try {
     const question = await new QuestionModel({
       questionText,
       answers,
+      date
     }).save();
     res.status(201).json(question);
   } catch (error) {
@@ -89,6 +90,19 @@ export const deleteQuestion = async (
       return next(new CustomError("Question not found", 404));
     }
     res.status(200).json({ message: "Question Deleted Successfully" });
+  } catch (error) {
+    next(new CustomError((error as Error).message, 500));
+  }
+};
+
+export const getQuestionCount = async (
+  req: Request,
+  res: Response<{ count: number } | { message: string }>,
+  next: NextFunction
+) => {
+  try {
+    const questionCount = await QuestionModel.countDocuments();
+    res.status(200).json({ count: questionCount });
   } catch (error) {
     next(new CustomError((error as Error).message, 500));
   }

@@ -171,3 +171,46 @@ export const searchQuestions = async (req: Request, res: Response, next: NextFun
     next(error);
   }
 };
+
+export const getQuizCount = async (
+  req: Request,
+  res: Response<{ count: number } | { message: string }>,
+  next: NextFunction
+) => {
+  try {
+    const quizCount = await QuizModel.countDocuments();
+    res.status(200).json({ count: quizCount });
+  } catch (error) {
+    next(new CustomError((error as Error).message, 500));
+  }
+};
+
+export const getQuizzesByDateRange = async (
+  req: Request<{}, {}, {}, { startDate: string; endDate: string }>,
+  res: Response<PopulatedQuiz[] | { message: string }>,
+  next: NextFunction
+) => {
+  const { startDate, endDate } = req.query;
+  try {
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+
+    if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+      return next(new CustomError("Invalid date format", 400));
+    }
+    const quizzes = await QuizModel.find({
+      publishedAt: {
+        $gte: start,
+        $lte: end,
+      },
+    }).populate("questions") as unknown as PopulatedQuiz[];
+
+    if (quizzes.length === 0) {
+      return next(new CustomError("No quizzes found for the specified date range", 404));
+    }
+
+    res.status(200).json(quizzes);
+  } catch (error) {
+    next(new CustomError((error as Error).message, 500));
+  }
+};

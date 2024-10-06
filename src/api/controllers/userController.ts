@@ -72,12 +72,12 @@ export const getUserByToken = async (req: Request, res: Response) => {
 };
 
 export const updateUser = async (
-  req: Request<{ userId: string }, {}, { email?: string; password?: string }>,
+  req: Request<{ userId: string }, {}, { username?: string; email?: string; password?: string; role?: string }>,
   res: Response,
   next: NextFunction
 ) => {
   const { userId } = req.params;
-  const { email, password } = req.body;
+  const { username, email, password, role } = req.body;
 
   try {
     const user = await UserModel.findById(userId);
@@ -94,10 +94,79 @@ export const updateUser = async (
     if (password) {
       user.password = password;
     }
+    if (username) {
+      user.username = username
+    }
+    if (role) {
+      user.role = role
+    }
+
     await user.save();
 
     res.status(200).json({ message: "User updated successfully" });
   } catch (error) {
     next(new CustomError((error as Error).message, 500));
+  }
+};
+
+export const getUsers = async (
+  req: Request,
+  res: Response<User[]>,
+  next: NextFunction
+) => {
+  try {
+    const users = await UserModel.find();
+    if (!users) {
+      return next(new CustomError("Users not found", 404));
+    }
+    res.status(200).json(users);
+  } catch (error) {
+    next(new CustomError((error as Error).message, 500));
+  }
+};
+
+export const getUserCount = async (
+  req: Request,
+  res: Response<{ totalUsers: number }>,
+  next: NextFunction
+) => {
+  try {
+    const totalUsers = await UserModel.countDocuments();
+    res.status(200).json({ totalUsers });
+  } catch (error) {
+    next(new CustomError((error as Error).message, 500));
+  }
+};
+
+export const getUserById = async (
+  req: Request<{ userId: string }>,
+  res: Response<User>,
+  next: NextFunction
+) => {
+  try {
+    const user = await UserModel.findById(req.params.userId).lean();
+    if (!user) {
+      return next(new CustomError("User not found", 404));
+    }
+
+    res.status(200).json(user);
+  } catch (error) {
+    next(new CustomError((error as Error).message, 500));
+  }
+};
+
+export const deleteUserById = async (
+  req: Request<{userId: string}>,
+  res: Response<User>,
+  next: NextFunction
+) => {
+  try {
+    const user = UserModel.findByIdAndDelete(req.params.userId) as unknown as User
+    if (!user) {
+      return next(new CustomError("User not found", 404))
+    }
+    res.status(200).json(user)
+  } catch (error) {
+    next(new CustomError((error as Error).message, 500))
   }
 };

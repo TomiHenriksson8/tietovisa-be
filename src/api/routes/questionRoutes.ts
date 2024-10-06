@@ -5,6 +5,7 @@ import {
   getQuestionById,
   updateQuestion,
   deleteQuestion,
+  getQuestionCount,
 } from "../controllers/questionController";
 import { protect, restrictTo, upload } from "../../middlewares";
 import { uploadCsv } from "../controllers/uploadController";
@@ -17,6 +18,7 @@ router.get("/", getQuestions);
 
 // Admin-only routes
 router.get("/search", protect, restrictTo("admin"), searchQuestions);
+router.get("/count", protect, restrictTo("admin"), getQuestionCount);
 router.post("/", protect, restrictTo("admin"), createQuestion);
 router.post(
   "/upload-questions",
@@ -28,7 +30,6 @@ router.post(
 router.put("/:id", protect, restrictTo("admin"), updateQuestion);
 router.delete("/:id", protect, restrictTo("admin"), deleteQuestion);
 
-// Place the dynamic route last
 router.get("/:id", getQuestionById);
 
 export default router;
