@@ -10,6 +10,7 @@ export const registerUser = (
     const username = `user_${randomString()}`;
     const email = `test_${randomString()}@example.com`;
     const password = randomString();
+
     request(app)
       .post("/api/v1/auth/register")
       .send({
@@ -17,19 +18,19 @@ export const registerUser = (
         email,
         password,
       })
-      .expect(201, (err, res) => {
-        if (err) {
-          reject(err);
-        } else {
-          expect(res.statusCode).toEqual(201);
-          expect(res.body).toHaveProperty("user");
-          expect(res.body).toHaveProperty("token");
-          resolve({
-            token: res.body.token,
-            email,
-            password,
-          });
-        }
+      .expect(201)
+      .then((res) => {
+        expect(res.statusCode).toEqual(201);
+        expect(res.body).toHaveProperty("user");
+        expect(res.body).toHaveProperty("token");
+        resolve({
+          token: res.body.token,
+          email,
+          password,
+        });
+      })
+      .catch((err) => {
+        reject(err);
       });
   });
 };

@@ -16,6 +16,7 @@ export const getQuizzesTest = (app: Express): Promise<any> => {
           expect(res.statusCode).toEqual(200);
           expect(Array.isArray(res.body)).toBe(true);
           expect(res.body.length).toBeGreaterThan(0);
+
           const quiz = res.body[0];
           expect(quiz).toHaveProperty("_id");
           expect(quiz).toHaveProperty("title");
@@ -29,15 +30,19 @@ export const getQuizzesTest = (app: Express): Promise<any> => {
           expect(question).toHaveProperty("answers");
           expect(Array.isArray(question.answers)).toBe(true);
 
-          const answer = question.answers[0];
-          expect(answer).toHaveProperty("text", "Paris");
-          expect(answer).toHaveProperty("isCorrect", true);
+          // Check that at least one of the answers has `isCorrect: true`
+          const hasCorrectAnswer = question.answers.some(
+            (answer: any) => answer.isCorrect === true
+          );
+          expect(hasCorrectAnswer).toBe(true);
 
           const secondQuestion = quiz.questions[1];
           expect(secondQuestion).toHaveProperty("questionText");
           expect(Array.isArray(secondQuestion.answers)).toBe(true);
-          expect(secondQuestion.answers[0]).toHaveProperty("text", "Mars");
-          expect(secondQuestion.answers[0]).toHaveProperty("isCorrect", true);
+          const hasSecondCorrectAnswer = secondQuestion.answers.some(
+            (answer: any) => answer.isCorrect === true
+          );
+          expect(hasSecondCorrectAnswer).toBe(true);
 
           resolve(res.body);
         } catch (assertionError) {

@@ -39,6 +39,7 @@ describe("GET /api/v1", () => {
   // Test auth routes
   it("should register a new user and login successfully", async () => {
     const registeredUser = await registerUser(app);
+    console.log("registered user wtf", registerUser)
     const loggedInUser = await loginUser(
       app,
       registeredUser.email,

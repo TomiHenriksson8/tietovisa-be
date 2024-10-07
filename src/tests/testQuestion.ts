@@ -8,11 +8,13 @@ export const createQuestionTest = (
 ): Promise<any> => {
   return new Promise((resolve, reject) => {
     const randomString = () => crypto.randomBytes(8).toString("hex");
+    const currentDate = new Date().toISOString(); // Add date field
     request(app)
       .post("/api/v1/questions")
       .set("Authorization", `Bearer ${token}`)
       .send({
         questionText: `tq: ${randomString()}`,
+        date: currentDate, // Include the date field
         answers: [
           { text: `ta: ${randomString()}`, isCorrect: true },
           { text: `ta: ${randomString()}`, isCorrect: false },
@@ -29,6 +31,7 @@ export const createQuestionTest = (
             expect(res.statusCode).toEqual(201);
             expect(res.body).toHaveProperty("_id");
             expect(res.body).toHaveProperty("questionText");
+            expect(res.body).toHaveProperty("date"); // Assert that date is returned
             expect(res.body).toHaveProperty("answers");
             expect(Array.isArray(res.body.answers)).toBe(true);
             expect(res.body.answers.length).toBe(4);
@@ -54,6 +57,7 @@ export const getQuestionByIdTest = (app: Express, id: string) => {
           expect(res.statusCode).toEqual(200);
           expect(res.body).toHaveProperty("_id");
           expect(res.body).toHaveProperty("questionText");
+          expect(res.body).toHaveProperty("date"); // Assert date is returned
           expect(res.body).toHaveProperty("answers");
           expect(Array.isArray(res.body.answers)).toBe(true);
           expect(res.body.answers.length).toBe(4);
