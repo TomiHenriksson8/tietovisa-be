@@ -4,6 +4,6 @@ import { protect } from "../../middlewares";
 
 const router = Router();
 
-router.post('/',protect, submitQuizResult)
+router.post('/submit-quiz', protect, submitQuizResult)
 
 export default router
