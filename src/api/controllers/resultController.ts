@@ -215,3 +215,106 @@ export const getAllQuizResultsByUserId = async (
     next(new CustomError((error as Error).message, 500));
   }
 };
+
+export const getAllTimeTopUsers = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const topUsers = await UserModel.find()
+      .sort({ points: -1 })
+      .limit(10)
+      .select("username points");
+
+    res.status(200).json(topUsers);
+  } catch (error) {
+    next(new CustomError((error as Error).message, 500));
+  }
+};
+
+
+export const getDailyTopUsers = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const dailyTopUsers = await ResultModel.aggregate([
+      { $match: { completedAt: { $gte: today } } },
+      {
+        $group: {
+          _id: "$userId",
+          totalPoints: { $sum: "$points" },
+        },
+      },
+      { $sort: { totalPoints: -1 } },
+      { $limit: 10 },
+      {
+        $lookup: {
+          from: "users",
+          localField: "_id",
+          foreignField: "_id",
+          as: "user",
+        },
+      },
+      { $unwind: "$user" },
+      {
+        $project: {
+          username: "$user.username",
+          totalPoints: 1,
+        },
+      },
+    ]);
+
+    res.status(200).json(dailyTopUsers);
+  } catch (error) {
+    next(new CustomError((error as Error).message, 500));
+  }
+};
+
+export const getWeeklyTopUsers = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const currentWeekStart = new Date();
+    currentWeekStart.setDate(currentWeekStart.getDate() - currentWeekStart.getDay());
+    currentWeekStart.setHours(0, 0, 0, 0);
+
+    const weeklyTopUsers = await ResultModel.aggregate([
+      { $match: { completedAt: { $gte: currentWeekStart } } },
+      {
+        $group: {
+          _id: "$userId",
+          totalPoints: { $sum: "$points" },
+        },
+      },
+      { $sort: { totalPoints: -1 } },
+      { $limit: 10 },
+      {
+        $lookup: {
+          from: "users",
+          localField: "_id",
+          foreignField: "_id",
+          as: "user",
+        },
+      },
+      { $unwind: "$user" },
+      {
+        $project: {
+          username: "$user.username",
+          totalPoints: 1,
+        },
+      },
+    ]);
+
+    res.status(200).json(weeklyTopUsers);
+  } catch (error) {
+    next(new CustomError((error as Error).message, 500));
+  }
+};
