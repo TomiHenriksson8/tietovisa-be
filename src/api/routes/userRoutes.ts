@@ -16,7 +16,7 @@ const router = Router();
 /// Admin-only routes
 router.get('/count', protect, restrictTo("admin"), getUserCount);
 router.get('/', protect, restrictTo("admin"), getUsers);
-router.put("/user/:userId", protect, restrictTo("admin"), updateUser);
+router.put("/user/:userId", protect, updateUser);
 router.delete('/user/:userId', protect, restrictTo("admin"), deleteUserById);
 
 // Authenticated user routes

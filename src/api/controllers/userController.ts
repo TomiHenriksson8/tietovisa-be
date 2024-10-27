@@ -78,12 +78,19 @@ export const updateUser = async (
 ) => {
   const { userId } = req.params;
   const { username, email, password, role } = req.body;
+  const requesterId = (req as any).user?.id;
+  const requesterRole = (req as any).user?.role;
 
   try {
+    if (requesterId !== userId && requesterRole !== "admin") {
+      return next(new CustomError("You do not have permission to modify this user", 403));
+    }
+
     const user = await UserModel.findById(userId);
     if (!user) {
       return next(new CustomError("User not found", 404));
     }
+
     if (email) {
       const existingUser = await UserModel.findOne({ email });
       if (existingUser && existingUser._id.toString() !== userId) {
@@ -95,10 +102,10 @@ export const updateUser = async (
       user.password = password;
     }
     if (username) {
-      user.username = username
+      user.username = username;
     }
-    if (role) {
-      user.role = role
+    if (role && requesterRole === "admin") {
+      user.role = role;
     }
 
     await user.save();
