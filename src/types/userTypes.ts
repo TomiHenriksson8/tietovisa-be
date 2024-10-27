@@ -6,10 +6,6 @@ export interface User extends Document {
   role: string;
   email: string;
   password: string;
-  scores: {
-    quizId: mongoose.Schema.Types.ObjectId;
-    score: number;
-    completedAt: Date;
-  }[],
+  points: number,
   matchPassword(enteredPassword: string): Promise<boolean>
 }

@@ -6,6 +6,7 @@ export interface Result {
   correctAnswers: number;
   totalQuestions: number;
   completedAt: Date;
+  points: Number;
 }
 
 export interface PopulatedResult extends Omit<Result, 'quizId'> {

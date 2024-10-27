@@ -7,6 +7,7 @@ const resultSchema = new Schema<Result>({
   correctAnswers: { type: Number, required: true },
   totalQuestions: { type: Number, required: true },
   completedAt: { type: Date, default: Date.now },
+  points: { type: Number, required: true },
 });
 
 const ResultModel = model<Result>("Result", resultSchema);

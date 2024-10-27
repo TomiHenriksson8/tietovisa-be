@@ -3,17 +3,11 @@ import { User } from "../../types/userTypes";
 import bcrypt from "bcryptjs";
 
 const userSchema = new Schema<User>({
-  username: { type: String, required: true, unique: true }, 
+  username: { type: String, required: true, unique: true },
   role: { type: String, enum: ["user", "admin"], default: "user" },
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
-  scores: [
-    {
-      quizId: { type: Schema.Types.ObjectId, ref: "Quiz" },
-      score: { type: Number },
-      completedAt: { type: Date },
-    },
-  ],
+  points: { type: Number, default: 0 },
 });
 
 userSchema.pre("save", async function (next) {

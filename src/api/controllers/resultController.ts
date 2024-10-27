@@ -4,6 +4,7 @@ import QuizModel from "../models/quizModel";
 import ResultModel from "../models/resultModel";
 import { PopulatedQuiz } from "../../types/quizTypes";
 import { PopulatedResult } from "../../types/resultTypes";
+import UserModel from "../models/userModel";
 
 export const submitQuizResult = async (
   req: Request<
@@ -26,6 +27,7 @@ export const submitQuizResult = async (
       return next(new CustomError("Quiz not found", 404));
     }
 
+    // Calculate the number of correct answers
     let correctAnswers = 0;
     quiz.questions.forEach((question: any) => {
       const userAnswer = answers.find(
@@ -41,36 +43,60 @@ export const submitQuizResult = async (
     });
 
     const totalQuestions = quiz.questions.length;
+
+    // Scoring rules
+    let points = correctAnswers * 10;
+    if (correctAnswers === totalQuestions) {
+      points += 20;
+    } else if (correctAnswers >= totalQuestions * 0.8) {
+      points += 10;
+    }
+
     if (userId) {
       const existingResult = await ResultModel.findOne({ userId, quizId });
 
       if (existingResult) {
         if (correctAnswers > existingResult.correctAnswers) {
+          // Ensure existingResult.points has a default value of 0 if undefined
+          const currentPoints = typeof existingResult.points === 'number' ? existingResult.points : 0;
+          const pointDifference = points - currentPoints;
+
+          // Update existing result if the new score is better
           existingResult.correctAnswers = correctAnswers;
           existingResult.totalQuestions = totalQuestions;
           existingResult.completedAt = new Date();
+          existingResult.points = points;
           await existingResult.save();
+
+          // Update the user’s total points with the difference
+          await UserModel.findByIdAndUpdate(userId, { $inc: { points: pointDifference } });
           console.log("Result updated with a better score.");
         } else {
           console.log("Existing score is better or equal, not updating.");
         }
       } else {
+        // Save new result and add points to user’s total points
         const newResult = new ResultModel({
           userId,
           quizId,
           correctAnswers,
           totalQuestions,
           completedAt: new Date(),
+          points,
         });
         await newResult.save();
-        console.log("New result saved.");
+        await UserModel.findByIdAndUpdate(userId, { $inc: { points } });
+        console.log("New result saved and points added.");
       }
     }
-    res.status(201).json({ correctAnswers, totalQuestions });
+
+    // Send the response after processing
+    res.status(201).json({ correctAnswers, totalQuestions, points });
   } catch (error) {
     next(new CustomError((error as Error).message, 500));
   }
 };
+
 
 export const compareQuizResult = async (
   req: Request<{ quizId: string }, {}, {}>,
