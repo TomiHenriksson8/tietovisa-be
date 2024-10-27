@@ -7,3 +7,10 @@ export interface Result {
   totalQuestions: number;
   completedAt: Date;
 }
+
+export interface PopulatedResult extends Omit<Result, 'quizId'> {
+  quizId: {
+    _id: mongoose.Schema.Types.ObjectId;
+    title: string;
+  };
+}
