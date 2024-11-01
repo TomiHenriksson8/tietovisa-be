@@ -138,6 +138,7 @@ export const searchQuestions = async (req: Request, res: Response, next: NextFun
     } else if (Array.isArray(req.query.q) && typeof req.query.q[0] === 'string') {
       searchTerm = req.query.q[0];
     }
+
     let page = 1;
     if (typeof req.query.page === 'string') {
       const parsedPage = parseInt(req.query.page, 10);
@@ -145,6 +146,7 @@ export const searchQuestions = async (req: Request, res: Response, next: NextFun
         page = parsedPage;
       }
     }
+
     let limit = 50;
     if (typeof req.query.limit === 'string') {
       const parsedLimit = parseInt(req.query.limit, 10);
@@ -153,14 +155,16 @@ export const searchQuestions = async (req: Request, res: Response, next: NextFun
       }
     }
     const filter: FilterQuery<QuestionDocument> = searchTerm
-      ? { $text: { $search: searchTerm } }
+      ? { questionText: { $regex: searchTerm, $options: 'i' } }
       : {};
+
     const totalQuestions = await QuestionModel.countDocuments(filter);
     const totalPages = Math.ceil(totalQuestions / limit);
     const questions = await QuestionModel.find(filter)
       .skip((page - 1) * limit)
       .limit(limit)
       .sort({ dateAdded: -1 });
+
     res.json({
       totalQuestions,
       totalPages,
