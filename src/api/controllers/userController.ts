@@ -44,7 +44,7 @@ export const loginUser = async (
     if (!user) {
       return next(new CustomError("Invalid email or password", 400));
     }
-    const isMatch = user.matchPassword(password);
+    const isMatch =  await user.matchPassword(password);
     if (!isMatch) {
       return next(new CustomError("Invalid email or password", 400));
     }

@@ -8,6 +8,12 @@ const resultSchema = new Schema<Result>({
   totalQuestions: { type: Number, required: true },
   completedAt: { type: Date, default: Date.now },
   points: { type: Number, required: true },
+  answers: [
+    {
+      questionId: { type: Schema.Types.ObjectId, ref: "Question", required: true },
+      answerId: { type: Schema.Types.ObjectId, ref: "Answer", required: true },
+    },
+  ],
 });
 
 const ResultModel = model<Result>("Result", resultSchema);

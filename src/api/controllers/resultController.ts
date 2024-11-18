@@ -19,13 +19,17 @@ export const submitQuizResult = async (
   const userId = (req as any).user?.id || null;
 
   try {
+    console.log("Fetching quiz with ID:", quizId);
     const quiz = (await QuizModel.findById(quizId).populate(
       "questions"
     )) as unknown as PopulatedQuiz;
 
     if (!quiz) {
+      console.error("Quiz not found for ID:", quizId);
       return next(new CustomError("Quiz not found", 404));
     }
+
+    console.log("Quiz loaded. Total questions:", quiz.questions.length);
 
     // Calculate the number of correct answers
     let correctAnswers = 0;
@@ -34,13 +38,22 @@ export const submitQuizResult = async (
         (a) => a.questionId === question._id.toString()
       );
       const correctAnswer = question.answers.find((a: any) => a.isCorrect);
+
+      console.log(
+        `Question ID: ${question._id}, User Answer: ${userAnswer?.answerId}, Correct Answer: ${correctAnswer?._id}`
+      );
+
       if (
         correctAnswer &&
-        correctAnswer._id.toString() === userAnswer?.answerId
+        correctAnswer._id.toString() === userAnswer?.answerId.toString()
       ) {
         correctAnswers++;
       }
     });
+
+    console.log(
+      `User answered ${correctAnswers} questions correctly out of ${quiz.questions.length}.`
+    );
 
     const totalQuestions = quiz.questions.length;
 
@@ -53,29 +66,28 @@ export const submitQuizResult = async (
     }
 
     if (userId) {
+      console.log("Checking existing result for user:", userId);
       const existingResult = await ResultModel.findOne({ userId, quizId });
 
       if (existingResult) {
+        console.log(
+          "Existing result found. Updating if the new score is better."
+        );
         if (correctAnswers > existingResult.correctAnswers) {
-          // Ensure existingResult.points has a default value of 0 if undefined
-          const currentPoints = typeof existingResult.points === 'number' ? existingResult.points : 0;
-          const pointDifference = points - currentPoints;
-
-          // Update existing result if the new score is better
+          const pointDifference = points - (existingResult.points || 0);
           existingResult.correctAnswers = correctAnswers;
           existingResult.totalQuestions = totalQuestions;
           existingResult.completedAt = new Date();
           existingResult.points = points;
           await existingResult.save();
 
-          // Update the user’s total points with the difference
-          await UserModel.findByIdAndUpdate(userId, { $inc: { points: pointDifference } });
-          console.log("Result updated with a better score.");
-        } else {
-          console.log("Existing score is better or equal, not updating.");
+          console.log("Updating user points by:", pointDifference);
+          await UserModel.findByIdAndUpdate(userId, {
+            $inc: { points: pointDifference },
+          });
         }
       } else {
-        // Save new result and add points to user’s total points
+        console.log("Saving new result for user:", userId);
         const newResult = new ResultModel({
           userId,
           quizId,
@@ -83,19 +95,86 @@ export const submitQuizResult = async (
           totalQuestions,
           completedAt: new Date(),
           points,
+          answers,
         });
         await newResult.save();
         await UserModel.findByIdAndUpdate(userId, { $inc: { points } });
-        console.log("New result saved and points added.");
       }
     }
 
-    // Send the response after processing
-    res.status(201).json({ correctAnswers, totalQuestions, points });
+    // Calculate percentage of correct answers for each question
+    const questionStats = await Promise.all(
+      quiz.questions.map(async (question: any) => {
+        console.log(`Fetching answers for question ID: ${question._id}`);
+
+        // Fetch all results where this question was answered
+        const allAnswers = await ResultModel.find({
+          quizId,
+          "answers.questionId": question._id.toString(),
+        });
+
+        console.log(
+          `Results for question ${question._id}:`,
+          allAnswers.map((result) => result.answers)
+        );
+
+        // Count how many users got this question correct
+        const correctCount = allAnswers.reduce((count, result) => {
+          const userAnswer = result.answers.find(
+            (a: any) => a.questionId.toString() === question._id.toString()
+          );
+
+          const correctAnswer = question.answers.find((a: any) => a.isCorrect);
+          const isCorrect =
+            userAnswer &&
+            correctAnswer &&
+            correctAnswer._id.toString() === userAnswer.answerId.toString();
+
+          console.log(
+            `Result ID: ${result._id}, User Answer: ${userAnswer?.answerId}, Is Correct: ${isCorrect}`
+          );
+
+          return count + (isCorrect ? 1 : 0);
+        }, 0);
+
+        console.log(
+          `Correct answers for question ${question._id}: ${correctCount}/${allAnswers.length}`
+        );
+
+        // Calculate the percentage of users who got this question correct
+        const percentage =
+          allAnswers.length > 0
+            ? Math.round((correctCount / allAnswers.length) * 100)
+            : 0;
+
+        console.log(
+          `Question ID: ${question._id}, Correct Percentage: ${percentage}`
+        );
+
+        return {
+          questionId: question._id,
+          questionText: question.questionText,
+          correctPercentage: percentage,
+        };
+      })
+    );
+
+    // Send the response
+    console.log("Final response:", {
+      correctAnswers,
+      totalQuestions,
+      points,
+      questionStats,
+    });
+    res.status(201).json({ correctAnswers, totalQuestions, points, questionStats });
   } catch (error) {
+    console.error("Error in submitQuizResult:", error);
     next(new CustomError((error as Error).message, 500));
   }
 };
+
+
+
 
 
 export const compareQuizResult = async (
