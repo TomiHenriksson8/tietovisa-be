@@ -306,7 +306,12 @@ export const getAllTimeTopUsers = async (
       .limit(10)
       .select("username points");
 
-    res.status(200).json(topUsers);
+    const formattedUsers = topUsers.map((user) => ({
+      username: user.username,
+      totalPoints: user.points,
+    }));
+
+    res.status(200).json(formattedUsers);
   } catch (error) {
     next(new CustomError((error as Error).message, 500));
   }
@@ -362,7 +367,9 @@ export const getWeeklyTopUsers = async (
 ) => {
   try {
     const currentWeekStart = new Date();
-    currentWeekStart.setDate(currentWeekStart.getDate() - currentWeekStart.getDay());
+    currentWeekStart.setDate(
+      currentWeekStart.getDate() - currentWeekStart.getDay()
+    );
     currentWeekStart.setHours(0, 0, 0, 0);
 
     const weeklyTopUsers = await ResultModel.aggregate([
