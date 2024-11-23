@@ -5,6 +5,7 @@ import QuizModel from "../models/quizModel";
 
 import { PopulatedQuiz, Quiz } from "../../types/quizTypes";
 import { FilterQuery } from "mongoose";
+import { Question } from "../../types/questionTypes";
 
 export const createQuiz = async (
   req: Request<{}, {}, { title: string; questionIds: string[] }>,
@@ -19,6 +20,43 @@ export const createQuiz = async (
     }
     const quiz = await new QuizModel({ title, questions: questionIds }).save();
     res.status(201).json(quiz);
+  } catch (error) {
+    next(new CustomError((error as Error).message, 500));
+  }
+};
+
+export const addQuestionToQuiz = async (
+  req: Request<{ quizId: string }>,
+  res: Response<{ message: string }>,
+  next: NextFunction
+) => {
+  const { quizId } = req.params;
+  const { questionId } = req.body;
+
+  try {
+    // Fetch the quiz
+    const quiz = await QuizModel.findById(quizId);
+
+    if (!quiz) {
+      return next(new CustomError("Quiz not found", 404));
+    }
+
+    // Ensure the question exists
+    const question = await QuestionModel.findById(questionId);
+    if (!question) {
+      return next(new CustomError("Question not found", 404));
+    }
+
+    // Check if `questions` array exists and if the question is already included
+    if (quiz.questions && quiz.questions.includes(questionId)) {
+      return next(new CustomError("Question is already part of the quiz", 400));
+    }
+
+    // Add the question to the quiz
+    quiz.questions.push(questionId);
+    await quiz.save();
+
+    res.status(200).json({ message: "Question added to the quiz successfully" });
   } catch (error) {
     next(new CustomError((error as Error).message, 500));
   }
@@ -69,14 +107,14 @@ export const getQuizByDate = async (
     const startOfDay = new Date(quizDate.setUTCHours(0, 0, 0, 0));
     const endOfDay = new Date(quizDate.setUTCHours(23, 59, 59, 999));
 
-    const quiz = await QuizModel.findOne({
+    const quiz = (await QuizModel.findOne({
       publishedAt: {
         $gte: startOfDay,
         $lte: endOfDay,
       },
     })
-      .populate('questions')
-      .lean() as unknown as PopulatedQuiz;
+      .populate("questions")
+      .lean()) as unknown as PopulatedQuiz;
 
     if (!quiz) {
       return next(new CustomError("Quiz not found for the given date", 404));
@@ -87,7 +125,6 @@ export const getQuizByDate = async (
     next(new CustomError((error as Error).message, 500));
   }
 };
-
 
 export const updateQuiz = async (
   req: Request<{ id: string }, {}, { title: string; questionIds: string[] }>,
@@ -130,17 +167,24 @@ export const deleteQuiz = async (
   }
 };
 
-export const searchQuestions = async (req: Request, res: Response, next: NextFunction) => {
+export const searchQuestions = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
-    let searchTerm = '';
-    if (typeof req.query.q === 'string') {
+    let searchTerm = "";
+    if (typeof req.query.q === "string") {
       searchTerm = req.query.q;
-    } else if (Array.isArray(req.query.q) && typeof req.query.q[0] === 'string') {
+    } else if (
+      Array.isArray(req.query.q) &&
+      typeof req.query.q[0] === "string"
+    ) {
       searchTerm = req.query.q[0];
     }
 
     let page = 1;
-    if (typeof req.query.page === 'string') {
+    if (typeof req.query.page === "string") {
       const parsedPage = parseInt(req.query.page, 10);
       if (!isNaN(parsedPage) && parsedPage > 0) {
         page = parsedPage;
@@ -148,14 +192,14 @@ export const searchQuestions = async (req: Request, res: Response, next: NextFun
     }
 
     let limit = 50;
-    if (typeof req.query.limit === 'string') {
+    if (typeof req.query.limit === "string") {
       const parsedLimit = parseInt(req.query.limit, 10);
       if (!isNaN(parsedLimit) && parsedLimit > 0) {
         limit = parsedLimit;
       }
     }
     const filter: FilterQuery<QuestionDocument> = searchTerm
-      ? { questionText: { $regex: searchTerm, $options: 'i' } }
+      ? { questionText: { $regex: searchTerm, $options: "i" } }
       : {};
 
     const totalQuestions = await QuestionModel.countDocuments(filter);
@@ -202,15 +246,17 @@ export const getQuizzesByDateRange = async (
     if (isNaN(start.getTime()) || isNaN(end.getTime())) {
       return next(new CustomError("Invalid date format", 400));
     }
-    const quizzes = await QuizModel.find({
+    const quizzes = (await QuizModel.find({
       publishedAt: {
         $gte: start,
         $lte: end,
       },
-    }).populate("questions") as unknown as PopulatedQuiz[];
+    }).populate("questions")) as unknown as PopulatedQuiz[];
 
     if (quizzes.length === 0) {
-      return next(new CustomError("No quizzes found for the specified date range", 404));
+      return next(
+        new CustomError("No quizzes found for the specified date range", 404)
+      );
     }
 
     res.status(200).json(quizzes);
