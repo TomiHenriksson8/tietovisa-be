@@ -163,17 +163,17 @@ export const getUserById = async (
 };
 
 export const deleteUserById = async (
-  req: Request<{userId: string}>,
-  res: Response<User>,
+  req: Request<{ userId: string }>,
+  res: Response<{ message: string }>,
   next: NextFunction
 ) => {
   try {
-    const user = UserModel.findByIdAndDelete(req.params.userId) as unknown as User
+    const user = await UserModel.findByIdAndDelete(req.params.userId);
     if (!user) {
-      return next(new CustomError("User not found", 404))
+      return next(new CustomError("User not found", 404));
     }
-    res.status(200).json(user)
+    res.status(200).json({ message: "User deleted successfully" });
   } catch (error) {
-    next(new CustomError((error as Error).message, 500))
+    next(new CustomError((error as Error).message, 500));
   }
 };
