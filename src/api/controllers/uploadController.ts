@@ -11,7 +11,7 @@ import CustomError from "../../classes/CustomError";
 export const uploadCsv = async (
   req: Request,
   res: Response,
-  next: NextFunction,
+  next: NextFunction
 ) => {
   try {
     if (!req.file) {
@@ -19,7 +19,7 @@ export const uploadCsv = async (
     }
 
     const questionsData: { [date: string]: Question[] } = {}; // Group questions by date
-    const csvFilePath = path.join(process.cwd(), "uploads", req.file.filename);
+    const csvFilePath = path.join(process.cwd(), "/uploads", req.file.filename);
 
     // Read the file content and decode it with ISO-8859-1 (Latin-1)
     const rawFileData = fs.readFileSync(csvFilePath);
@@ -46,7 +46,7 @@ export const uploadCsv = async (
 
       if (columns.length < 9) {
         console.error(
-          `Skipping row ${index + 1} due to incorrect column count`,
+          `Skipping row ${index + 1} due to incorrect column count`
         );
         return;
       }
@@ -121,7 +121,7 @@ export const uploadCsv = async (
         createdQuizzes.push(quiz);
       } else {
         console.error(
-          `Date ${dateKey} does not have exactly 10 questions (found ${questions.length})`,
+          `Date ${dateKey} does not have exactly 10 questions (found ${questions.length})`
         );
       }
     }
