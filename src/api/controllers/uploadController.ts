@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import fs from "fs";
 import path from "path";
-import iconv from "iconv-lite";  // To handle character encoding issues
+import iconv from "iconv-lite"; // To handle character encoding issues
 import QuestionModel from "../models/questionModel";
 import QuizModel from "../models/quizModel";
 import { Question } from "../../types/questionTypes";
@@ -11,7 +11,7 @@ import CustomError from "../../classes/CustomError";
 export const uploadCsv = async (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   try {
     if (!req.file) {
@@ -23,38 +23,42 @@ export const uploadCsv = async (
 
     // Read the file content and decode it with ISO-8859-1 (Latin-1)
     const rawFileData = fs.readFileSync(csvFilePath);
-    const fileContent = iconv.decode(rawFileData, 'ISO-8859-1');
+    const fileContent = iconv.decode(rawFileData, "windows-1252");
 
     // Split the file content by lines and handle any quotes
-    const rows = fileContent.split("\n").map(row => row.trim());
+    const rows = fileContent.split("\n").map((row) => row.trim());
 
     console.log(`Total rows found (including headers): ${rows.length}`);
 
     // Extract headers and data
-    const headers = rows[0].split(",");  // Assuming first row is the header
+    const headers = rows[0].split(","); // Assuming first row is the header
     console.log("Headers:", headers);
 
     // Parse each row and group them by date
     rows.slice(1).forEach((row, index) => {
-      const columns = row.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);  // Handle commas inside quoted fields
+      const columns = row.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/); // Handle commas inside quoted fields
 
-      const isEmptyRow = columns.every(column => column.trim() === "");
+      const isEmptyRow = columns.every((column) => column.trim() === "");
       if (isEmptyRow) {
         console.log(`Skipping empty row ${index + 1}`);
         return;
       }
 
       if (columns.length < 9) {
-        console.error(`Skipping row ${index + 1} due to incorrect column count`);
+        console.error(
+          `Skipping row ${index + 1} due to incorrect column count`,
+        );
         return;
       }
 
-      const questionText = columns[0] ? columns[0].replace(/(^"|"$)/g, '').trim() : undefined;
+      const questionText = columns[0]
+        ? columns[0].replace(/(^"|"$)/g, "").trim()
+        : undefined;
       const correctAnswerIndex = columns[5] ? columns[5].trim() : undefined;
       let date: Date | undefined;
 
       if (columns[8]) {
-        const dateString = columns[8].replace(/(^"|"$)/g, '').trim();
+        const dateString = columns[8].replace(/(^"|"$)/g, "").trim();
         date = new Date(dateString);
 
         if (isNaN(date.getTime())) {
@@ -69,13 +73,25 @@ export const uploadCsv = async (
       }
 
       const answers = [
-        { text: columns[1].replace(/(^"|"$)/g, '').trim(), isCorrect: correctAnswerIndex === "1" },
-        { text: columns[2].replace(/(^"|"$)/g, '').trim(), isCorrect: correctAnswerIndex === "2" },
-        { text: columns[3].replace(/(^"|"$)/g, '').trim(), isCorrect: correctAnswerIndex === "3" },
-        { text: columns[4].replace(/(^"|"$)/g, '').trim(), isCorrect: correctAnswerIndex === "4" },
+        {
+          text: columns[1].replace(/(^"|"$)/g, "").trim(),
+          isCorrect: correctAnswerIndex === "1",
+        },
+        {
+          text: columns[2].replace(/(^"|"$)/g, "").trim(),
+          isCorrect: correctAnswerIndex === "2",
+        },
+        {
+          text: columns[3].replace(/(^"|"$)/g, "").trim(),
+          isCorrect: correctAnswerIndex === "3",
+        },
+        {
+          text: columns[4].replace(/(^"|"$)/g, "").trim(),
+          isCorrect: correctAnswerIndex === "4",
+        },
       ];
 
-      const dateKey = date.toISOString().split('T')[0]; // Use the date as a key (only the date part)
+      const dateKey = date.toISOString().split("T")[0]; // Use the date as a key (only the date part)
 
       if (!questionsData[dateKey]) {
         questionsData[dateKey] = [];
@@ -93,7 +109,7 @@ export const uploadCsv = async (
       if (questions.length === 10) {
         const createdQuestions = await QuestionModel.insertMany(questions);
 
-        const questionIds = createdQuestions.map(q => q._id);
+        const questionIds = createdQuestions.map((q) => q._id);
 
         // Create the quiz
         const quiz: Quiz = await QuizModel.create({
@@ -104,7 +120,9 @@ export const uploadCsv = async (
 
         createdQuizzes.push(quiz);
       } else {
-        console.error(`Date ${dateKey} does not have exactly 10 questions (found ${questions.length})`);
+        console.error(
+          `Date ${dateKey} does not have exactly 10 questions (found ${questions.length})`,
+        );
       }
     }
 
@@ -112,7 +130,6 @@ export const uploadCsv = async (
       message: "Quizzes and questions uploaded successfully",
       quizzes: createdQuizzes,
     });
-
   } catch (error) {
     next(new CustomError((error as Error).message, 500));
   }
