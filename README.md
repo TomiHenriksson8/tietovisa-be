@@ -38,7 +38,7 @@ Palvelin käynnistyy oletusarvoisesti porttiin 3000.
 
 ## API
 
-Palvelimen API löytyy osoitteesta (tarkistan oikean osoitteen sitten kun API dokumentaatio on online).
+Palvelimen API löytyy osoitteesta (tarkistan oikean osoitteen kun API dokumentaatio on online).
 
 ## Teknologiat
 
