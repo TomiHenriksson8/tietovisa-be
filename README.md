@@ -24,7 +24,9 @@ Frontend-repositorio löytyy [täältä](https://github.com/MetroHege/tietovisa-
 3. Luo .env-tiedosto projektin juureen ja lisää siihen seuraavat ympäristömuuttujat:
 
    ```env
-   tarkistan nää myöhemmin
+   MONGO_URI=
+   JWT_SECRET=
+   PORT=(valinnainen, oletus 3000)
    ```
 
 4. Käynnistä palvelin
