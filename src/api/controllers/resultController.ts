@@ -13,7 +13,7 @@ export const submitQuizResult = async (
     { quizId: string; answers: { questionId: string; answerId: string }[] }
   >,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   const { quizId, answers } = req.body;
   const userId = (req as any).user?.id || null;
@@ -21,7 +21,7 @@ export const submitQuizResult = async (
   try {
     console.log("Fetching quiz with ID:", quizId);
     const quiz = (await QuizModel.findById(quizId).populate(
-      "questions"
+      "questions",
     )) as unknown as PopulatedQuiz;
 
     if (!quiz) {
@@ -31,16 +31,15 @@ export const submitQuizResult = async (
 
     console.log("Quiz loaded. Total questions:", quiz.questions.length);
 
-    // Calculate the number of correct answers
     let correctAnswers = 0;
     quiz.questions.forEach((question: any) => {
       const userAnswer = answers.find(
-        (a) => a.questionId === question._id.toString()
+        (a) => a.questionId === question._id.toString(),
       );
       const correctAnswer = question.answers.find((a: any) => a.isCorrect);
 
       console.log(
-        `Question ID: ${question._id}, User Answer: ${userAnswer?.answerId}, Correct Answer: ${correctAnswer?._id}`
+        `Question ID: ${question._id}, User Answer: ${userAnswer?.answerId}, Correct Answer: ${correctAnswer?._id}`,
       );
 
       if (
@@ -52,7 +51,7 @@ export const submitQuizResult = async (
     });
 
     console.log(
-      `User answered ${correctAnswers} questions correctly out of ${quiz.questions.length}.`
+      `User answered ${correctAnswers} questions correctly out of ${quiz.questions.length}.`,
     );
 
     const totalQuestions = quiz.questions.length;
@@ -70,9 +69,6 @@ export const submitQuizResult = async (
       const existingResult = await ResultModel.findOne({ userId, quizId });
 
       if (existingResult) {
-        console.log(
-          "Existing result found. Updating if the new score is better."
-        );
         if (correctAnswers > existingResult.correctAnswers) {
           const pointDifference = points - (existingResult.points || 0);
           existingResult.correctAnswers = correctAnswers;
@@ -81,13 +77,11 @@ export const submitQuizResult = async (
           existingResult.points = points;
           await existingResult.save();
 
-          console.log("Updating user points by:", pointDifference);
           await UserModel.findByIdAndUpdate(userId, {
             $inc: { points: pointDifference },
           });
         }
       } else {
-        console.log("Saving new result for user:", userId);
         const newResult = new ResultModel({
           userId,
           quizId,
@@ -102,12 +96,9 @@ export const submitQuizResult = async (
       }
     }
 
-    // Calculate percentage of correct answers for each question
     const questionStats = await Promise.all(
       quiz.questions.map(async (question: any) => {
         console.log(`Fetching answers for question ID: ${question._id}`);
-
-        // Fetch all results where this question was answered
         const allAnswers = await ResultModel.find({
           quizId,
           "answers.questionId": question._id.toString(),
@@ -115,13 +106,12 @@ export const submitQuizResult = async (
 
         console.log(
           `Results for question ${question._id}:`,
-          allAnswers.map((result) => result.answers)
+          allAnswers.map((result) => result.answers),
         );
 
-        // Count how many users got this question correct
         const correctCount = allAnswers.reduce((count, result) => {
           const userAnswer = result.answers.find(
-            (a: any) => a.questionId.toString() === question._id.toString()
+            (a: any) => a.questionId.toString() === question._id.toString(),
           );
 
           const correctAnswer = question.answers.find((a: any) => a.isCorrect);
@@ -130,25 +120,19 @@ export const submitQuizResult = async (
             correctAnswer &&
             correctAnswer._id.toString() === userAnswer.answerId.toString();
 
-          console.log(
-            `Result ID: ${result._id}, User Answer: ${userAnswer?.answerId}, Is Correct: ${isCorrect}`
-          );
-
           return count + (isCorrect ? 1 : 0);
         }, 0);
 
         console.log(
-          `Correct answers for question ${question._id}: ${correctCount}/${allAnswers.length}`
+          `Correct answers for question ${question._id}: ${correctCount}/${allAnswers.length}`,
         );
-
-        // Calculate the percentage of users who got this question correct
         const percentage =
           allAnswers.length > 0
             ? Math.round((correctCount / allAnswers.length) * 100)
             : 0;
 
         console.log(
-          `Question ID: ${question._id}, Correct Percentage: ${percentage}`
+          `Question ID: ${question._id}, Correct Percentage: ${percentage}`,
         );
 
         return {
@@ -156,31 +140,28 @@ export const submitQuizResult = async (
           questionText: question.questionText,
           correctPercentage: percentage,
         };
-      })
+      }),
     );
 
-    // Send the response
     console.log("Final response:", {
       correctAnswers,
       totalQuestions,
       points,
       questionStats,
     });
-    res.status(201).json({ correctAnswers, totalQuestions, points, questionStats });
+    res
+      .status(201)
+      .json({ correctAnswers, totalQuestions, points, questionStats });
   } catch (error) {
     console.error("Error in submitQuizResult:", error);
     next(new CustomError((error as Error).message, 500));
   }
 };
 
-
-
-
-
 export const compareQuizResult = async (
   req: Request<{ quizId: string }, {}, {}>,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   const { quizId } = req.params;
   const userId = (req as any).user?.id;
@@ -206,7 +187,7 @@ export const compareQuizResult = async (
     }
 
     const betterThanCount = allResults.filter(
-      (result) => result.correctAnswers < userResult.correctAnswers
+      (result) => result.correctAnswers < userResult.correctAnswers,
     ).length;
 
     const percentage =
@@ -229,11 +210,10 @@ export const compareQuizResult = async (
 export const getQuizResultByQuizId = async (
   req: Request<{ quizId: string }, {}, {}, { userId: string }>,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   const { quizId } = req.params;
   const { userId } = req.query;
-
 
   console.log("Quiz ID:", quizId);
   console.log("User ID:", userId);
@@ -250,7 +230,9 @@ export const getQuizResultByQuizId = async (
 
     const userResult = await ResultModel.findOne({ userId, quizId });
     if (!userResult) {
-      return res.status(404).json({ message: "User has not taken this quiz yet." });
+      return res
+        .status(404)
+        .json({ message: "User has not taken this quiz yet." });
     }
 
     res.status(200).json({
@@ -266,19 +248,22 @@ export const getQuizResultByQuizId = async (
 export const getAllQuizResultsByUserId = async (
   req: Request<{}, {}, {}, { userId: string }>,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   const { userId } = req.query;
 
   if (!userId) {
     return next(new CustomError("User ID is required", 400));
   }
-
   try {
-    const userResults = await ResultModel.find({ userId }).populate("quizId") as unknown as PopulatedResult[];
+    const userResults = (await ResultModel.find({ userId }).populate(
+      "quizId",
+    )) as unknown as PopulatedResult[];
 
     if (userResults.length === 0) {
-      return res.status(404).json({ message: "No quiz results found for this user." });
+      return res
+        .status(404)
+        .json({ message: "No quiz results found for this user." });
     }
 
     const formattedResults = userResults.map((result) => ({
@@ -296,9 +281,9 @@ export const getAllQuizResultsByUserId = async (
 };
 
 export const getAllTimeTopUsers = async (
-  req: Request,
+  _req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   try {
     const topUsers = await UserModel.find()
@@ -317,11 +302,10 @@ export const getAllTimeTopUsers = async (
   }
 };
 
-
 export const getDailyTopUsers = async (
-  req: Request,
+  _req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   try {
     const today = new Date();
@@ -361,14 +345,14 @@ export const getDailyTopUsers = async (
 };
 
 export const getWeeklyTopUsers = async (
-  req: Request,
+  _req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   try {
     const currentWeekStart = new Date();
     currentWeekStart.setDate(
-      currentWeekStart.getDate() - currentWeekStart.getDay()
+      currentWeekStart.getDate() - currentWeekStart.getDay(),
     );
     currentWeekStart.setHours(0, 0, 0, 0);
 

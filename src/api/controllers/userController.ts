@@ -11,7 +11,7 @@ export const registerUser = async (
     { username: string; email: string; password: string; role?: string }
   >,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   const { username, email, password, role = "user" } = req.body;
 
@@ -35,23 +35,21 @@ export const registerUser = async (
 export const loginUser = async (
   req: Request<{}, {}, { email: string; password: string }>,
   res: Response<{ user: User; token: string }>,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   const { email, password } = req.body;
-  console.log(email, password);
   try {
     const user = await UserModel.findOne({ email });
     if (!user) {
       return next(new CustomError("Invalid email or password", 400));
     }
-    const isMatch =  await user.matchPassword(password);
+    const isMatch = await user.matchPassword(password);
     if (!isMatch) {
       return next(new CustomError("Invalid email or password", 400));
     }
     const token = generateToken(user._id.toString(), user.role);
     res.status(200).json({ user, token });
   } catch (error) {
-    console.error("Error during login:", error);
     next(new CustomError((error as Error).message, 500));
   }
 };
@@ -72,9 +70,13 @@ export const getUserByToken = async (req: Request, res: Response) => {
 };
 
 export const updateUser = async (
-  req: Request<{ userId: string }, {}, { username?: string; email?: string; password?: string; role?: string }>,
+  req: Request<
+    { userId: string },
+    {},
+    { username?: string; email?: string; password?: string; role?: string }
+  >,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   const { userId } = req.params;
   const { username, email, password, role } = req.body;
@@ -83,7 +85,9 @@ export const updateUser = async (
 
   try {
     if (requesterId !== userId && requesterRole !== "admin") {
-      return next(new CustomError("You do not have permission to modify this user", 403));
+      return next(
+        new CustomError("You do not have permission to modify this user", 403),
+      );
     }
 
     const user = await UserModel.findById(userId);
@@ -117,9 +121,9 @@ export const updateUser = async (
 };
 
 export const getUsers = async (
-  req: Request,
+  _req: Request,
   res: Response<User[]>,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   try {
     const users = await UserModel.find();
@@ -133,9 +137,9 @@ export const getUsers = async (
 };
 
 export const getUserCount = async (
-  req: Request,
+  _req: Request,
   res: Response<{ totalUsers: number }>,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   try {
     const totalUsers = await UserModel.countDocuments();
@@ -148,7 +152,7 @@ export const getUserCount = async (
 export const getUserById = async (
   req: Request<{ userId: string }>,
   res: Response<User>,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   try {
     const user = await UserModel.findById(req.params.userId).lean();
@@ -165,7 +169,7 @@ export const getUserById = async (
 export const deleteUserById = async (
   req: Request<{ userId: string }>,
   res: Response<{ message: string }>,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   try {
     const user = await UserModel.findByIdAndDelete(req.params.userId);

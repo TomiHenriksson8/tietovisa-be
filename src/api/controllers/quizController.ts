@@ -2,15 +2,13 @@ import { NextFunction, Request, Response } from "express";
 import QuestionModel, { QuestionDocument } from "../models/questionModel";
 import CustomError from "../../classes/CustomError";
 import QuizModel from "../models/quizModel";
-
 import { PopulatedQuiz, Quiz } from "../../types/quizTypes";
 import { FilterQuery } from "mongoose";
-import { Question } from "../../types/questionTypes";
 
 export const createQuiz = async (
   req: Request<{}, {}, { title: string; questionIds: string[] }>,
   res: Response<Quiz>,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   const { title, questionIds } = req.body;
   try {
@@ -28,48 +26,43 @@ export const createQuiz = async (
 export const addQuestionToQuiz = async (
   req: Request<{ quizId: string }>,
   res: Response<{ message: string }>,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   const { quizId } = req.params;
   const { questionId } = req.body;
 
   try {
-    // Fetch the quiz
     const quiz = await QuizModel.findById(quizId);
 
     if (!quiz) {
       return next(new CustomError("Quiz not found", 404));
     }
-
-    // Ensure the question exists
     const question = await QuestionModel.findById(questionId);
     if (!question) {
       return next(new CustomError("Question not found", 404));
     }
-
-    // Check if `questions` array exists and if the question is already included
     if (quiz.questions && quiz.questions.includes(questionId)) {
       return next(new CustomError("Question is already part of the quiz", 400));
     }
-
-    // Add the question to the quiz
     quiz.questions.push(questionId);
     await quiz.save();
 
-    res.status(200).json({ message: "Question added to the quiz successfully" });
+    res
+      .status(200)
+      .json({ message: "Question added to the quiz successfully" });
   } catch (error) {
     next(new CustomError((error as Error).message, 500));
   }
 };
 
 export const getQuizzes = async (
-  req: Request,
+  _req: Request,
   res: Response<PopulatedQuiz[]>,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   try {
     const quizzes = (await QuizModel.find().populate(
-      "questions"
+      "questions",
     )) as unknown as PopulatedQuiz[];
     res.status(200).json(quizzes);
   } catch (error) {
@@ -80,12 +73,12 @@ export const getQuizzes = async (
 export const getQuizById = async (
   req: Request<{ id: string }>,
   res: Response<PopulatedQuiz>,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   const { id } = req.params;
   try {
     const quiz = (await QuizModel.findById(id).populate(
-      "questions"
+      "questions",
     )) as unknown as PopulatedQuiz;
     if (!quiz) {
       return next(new CustomError("Quiz not found", 404));
@@ -99,7 +92,7 @@ export const getQuizById = async (
 export const getQuizByDate = async (
   req: Request<{}, {}, {}, { date: string }>,
   res: Response<PopulatedQuiz>,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   const { date } = req.query;
   try {
@@ -129,7 +122,7 @@ export const getQuizByDate = async (
 export const updateQuiz = async (
   req: Request<{ id: string }, {}, { title: string; questionIds: string[] }>,
   res: Response<PopulatedQuiz>,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   const { title, questionIds } = req.body;
   try {
@@ -140,7 +133,7 @@ export const updateQuiz = async (
     const quiz = (await QuizModel.findByIdAndUpdate(
       req.params.id,
       { title, questions: questionIds },
-      { new: true }
+      { new: true },
     ).populate("questions")) as unknown as PopulatedQuiz;
     if (!quiz) {
       return next(new CustomError("Quiz not found", 404));
@@ -154,7 +147,7 @@ export const updateQuiz = async (
 export const deleteQuiz = async (
   req: Request<{ id: string }>,
   res: Response<{ message: string }>,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   try {
     const quiz = await QuizModel.findByIdAndDelete(req.params.id);
@@ -170,7 +163,7 @@ export const deleteQuiz = async (
 export const searchQuestions = async (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   try {
     let searchTerm = "";
@@ -221,9 +214,9 @@ export const searchQuestions = async (
 };
 
 export const getQuizCount = async (
-  req: Request,
+  _req: Request,
   res: Response<{ count: number } | { message: string }>,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   try {
     const quizCount = await QuizModel.countDocuments();
@@ -236,7 +229,7 @@ export const getQuizCount = async (
 export const getQuizzesByDateRange = async (
   req: Request<{}, {}, {}, { startDate: string; endDate: string }>,
   res: Response<PopulatedQuiz[] | { message: string }>,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   const { startDate, endDate } = req.query;
   try {
@@ -255,7 +248,7 @@ export const getQuizzesByDateRange = async (
 
     if (quizzes.length === 0) {
       return next(
-        new CustomError("No quizzes found for the specified date range", 404)
+        new CustomError("No quizzes found for the specified date range", 404),
       );
     }
 

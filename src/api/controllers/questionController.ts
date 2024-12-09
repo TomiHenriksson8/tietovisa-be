@@ -7,17 +7,21 @@ export const createQuestion = async (
   req: Request<
     {},
     {},
-    { questionText: string; date: string; answers: { text: string; isCorrect: boolean }[] }
+    {
+      questionText: string;
+      date: string;
+      answers: { text: string; isCorrect: boolean }[];
+    }
   >,
   res: Response<Question | { message: string }>,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   const { questionText, answers, date } = req.body;
   try {
     const question = await new QuestionModel({
       questionText,
       answers,
-      date
+      date,
     }).save();
     res.status(201).json(question);
   } catch (error) {
@@ -26,9 +30,9 @@ export const createQuestion = async (
 };
 
 export const getQuestions = async (
-  req: Request,
+  _req: Request,
   res: Response<Question[] | { message: string }>,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   try {
     const questions = await QuestionModel.find();
@@ -41,7 +45,7 @@ export const getQuestions = async (
 export const getQuestionById = async (
   req: Request<{ id: string }>,
   res: Response<Question | { message: string }>,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   try {
     const question = await QuestionModel.findById(req.params.id);
@@ -61,14 +65,14 @@ export const updateQuestion = async (
     { questionText: string; answers: { text: string; isCorrect: boolean }[] }
   >,
   res: Response<Question | { message: string }>,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   const { questionText, answers } = req.body;
   try {
     const updatedQuestion = await QuestionModel.findByIdAndUpdate(
       req.params.id,
       { questionText, answers },
-      { new: true }
+      { new: true },
     );
     if (!updatedQuestion) {
       return next(new CustomError("Question not found", 404));
@@ -82,7 +86,7 @@ export const updateQuestion = async (
 export const deleteQuestion = async (
   req: Request<{ id: string }>,
   res: Response<{ message: string }>,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   try {
     const question = await QuestionModel.findByIdAndDelete(req.params.id);
@@ -96,9 +100,9 @@ export const deleteQuestion = async (
 };
 
 export const getQuestionCount = async (
-  req: Request,
+  _req: Request,
   res: Response<{ count: number } | { message: string }>,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   try {
     const questionCount = await QuestionModel.countDocuments();

@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import fs from "fs";
 import path from "path";
-import iconv from "iconv-lite"; // To handle character encoding issues
+import iconv from "iconv-lite";
 import QuestionModel from "../models/questionModel";
 import QuizModel from "../models/quizModel";
 import { Question } from "../../types/questionTypes";
@@ -11,46 +11,31 @@ import CustomError from "../../classes/CustomError";
 export const uploadCsv = async (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   try {
     if (!req.file) {
       return next(new CustomError("No file uploaded", 400));
     }
 
-    const questionsData: { [date: string]: Question[] } = {}; // Group questions by date
+    const questionsData: { [date: string]: Question[] } = {};
     const csvFilePath = path.join(process.cwd(), "/uploads", req.file.filename);
-
-    // Read the file content and decode it with ISO-8859-1 (Latin-1)
     const rawFileData = fs.readFileSync(csvFilePath);
     const fileContent = iconv.decode(rawFileData, "windows-1252");
-
-    // Split the file content by lines and handle any quotes
     const rows = fileContent.split("\n").map((row) => row.trim());
-
-    console.log(`Total rows found (including headers): ${rows.length}`);
-
-    // Extract headers and data
-    const headers = rows[0].split(","); // Assuming first row is the header
-    console.log("Headers:", headers);
-
-    // Parse each row and group them by date
     rows.slice(1).forEach((row, index) => {
       const columns = row.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/); // Handle commas inside quoted fields
-
       const isEmptyRow = columns.every((column) => column.trim() === "");
       if (isEmptyRow) {
         console.log(`Skipping empty row ${index + 1}`);
         return;
       }
-
       if (columns.length < 9) {
         console.error(
-          `Skipping row ${index + 1} due to incorrect column count`
+          `Skipping row ${index + 1} due to incorrect column count`,
         );
         return;
       }
-
       const questionText = columns[0]
         ? columns[0].replace(/(^"|"$)/g, "").trim()
         : undefined;
@@ -91,8 +76,7 @@ export const uploadCsv = async (
         },
       ];
 
-      const dateKey = date.toISOString().split("T")[0]; // Use the date as a key (only the date part)
-
+      const dateKey = date.toISOString().split("T")[0];
       if (!questionsData[dateKey]) {
         questionsData[dateKey] = [];
       }
@@ -100,7 +84,6 @@ export const uploadCsv = async (
       questionsData[dateKey].push({ questionText, answers, date });
     });
 
-    // Process each group of questions by date and create a quiz
     const createdQuizzes = [];
 
     for (const dateKey in questionsData) {
@@ -111,7 +94,6 @@ export const uploadCsv = async (
 
         const questionIds = createdQuestions.map((q) => q._id);
 
-        // Create the quiz
         const quiz: Quiz = await QuizModel.create({
           title: `Quiz for ${new Date(dateKey).toLocaleDateString()}`,
           questions: questionIds,
@@ -121,7 +103,7 @@ export const uploadCsv = async (
         createdQuizzes.push(quiz);
       } else {
         console.error(
-          `Date ${dateKey} does not have exactly 10 questions (found ${questions.length})`
+          `Date ${dateKey} does not have exactly 10 questions (found ${questions.length})`,
         );
       }
     }

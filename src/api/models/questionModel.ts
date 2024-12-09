@@ -17,13 +17,12 @@ const questionSchema = new Schema<Question>({
 });
 
 questionSchema.index({
-  questionText: 'text',
-  'answers.text': 'text',
+  questionText: "text",
+  "answers.text": "text",
 });
 
-// Define and export the QuestionDocument interface
-export interface QuestionDocument extends Document, Question {}
-
+export interface QuestionDocument extends Document, Question { }
 
 const QuestionModel = model<Question>("Question", questionSchema);
+
 export default QuestionModel;
